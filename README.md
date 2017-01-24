@@ -7,5 +7,5 @@ Why leave twitter to archive a link or tweet?
 
 
 # Credits
-This bot uses Archive.is to archive links.
+This bot uses http://archive.is/ to archive links.
 Check them out: https://twitter.com/archiveis
