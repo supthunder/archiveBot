@@ -79,8 +79,14 @@ def getMentions():
 			try:
 				convertUrl = mention.entities['urls'][0]['expanded_url']
 			except:
-				print("No URL")
-				exit(1)
+				print("Not URL")
+				try:
+					checkIfReply = mention.in_reply_to_status_id
+					convertUrl = "https://twitter.com/statuses/"
+					convertUrl += str(checkIfReply)
+				except:
+					print("Not reply")
+					exit(1)
 			username = mention.user.screen_name
 			tweetId = mention.id
 			mentionLog.append(str(mention.created_at))
