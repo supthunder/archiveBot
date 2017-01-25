@@ -1,9 +1,10 @@
 # archiveBot
 Why leave twitter to archive a link or tweet?
 
-1. Tweet a link @xyz and it will reply with an archive.is URL!
+1. Tweet a link @archiveURL and it will reply with an archive.is URL!
 
-2. Mention @xyz in reply to a tweet to archive it!
+2. Mention @archiveURL in reply to a tweet to archive it!
+![](http://imgur.com/0TCEmM9.gif)
 
 
 # Credits
