@@ -9,6 +9,7 @@ import tweepy
 from tokens import *
 import os
 import time
+import cfscrape
 
 # setup twitter
 auth = tweepy.OAuthHandler(C_KEY, C_SECRET)  
@@ -20,12 +21,12 @@ tweetId = ""
 
 # Tweet link
 def tweet(archiveUrl):
-    tweet = "@"+username+"\n"
-    tweet += "Archived link:\n"
-    tweet += archiveUrl+"\n"
-    tweet += strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    print(tweet)
-    api.update_status(tweet,tweetId)
+	tweet = "@"+username+"\n"
+	tweet += "Archived link:\n"
+	tweet += archiveUrl+"\n"
+	tweet += strftime("%Y-%m-%d %H:%M:%S", gmtime())
+	print(tweet)
+	api.update_status(tweet,tweetId)
 
 # Load mention log
 # This keeps track of mentions
@@ -38,9 +39,6 @@ def loadLog():
 # Write mention log
 # This keeps track of mentions
 def writeLog(mentionLog):
-	# Remove previous user
-	while(len(mentionLog) > 100):
-		mentionLog.pop()
 	# open file, write in log
 	with open('mentionLog.txt', 'w') as outfile:
 		json.dump(mentionLog, outfile)
@@ -49,11 +47,13 @@ def writeLog(mentionLog):
 # 2. Get archive.is new URL
 def archive(convertUrl):
 	url = "http://archive.is/submit/"
-	s = requests.Session()
-	# r2 = s.get('http://archive.is/')
-	# time.sleep(3)
-	r = s.post(url,data = {'url':convertUrl})
-
+	print("Connecting to archive.is..")
+	# s = requests.Session()
+	# r = requests.post(url,data = {'url':convertUrl})
+	
+	# bypass cloudflare
+	scraper = cfscrape.create_scraper()
+	r = scraper.post(url,data = {'url':convertUrl})
 	soup = BeautifulSoup(r.text,"html.parser")
 	linkRegex = re.compile("(?<=\(\").*(?=\"\))")
 	archiveUrl = soup.find('script')
@@ -63,7 +63,6 @@ def archive(convertUrl):
 		print("Link already archived!")
 		archiveUrl = (soup.findAll(attrs={"itemprop":"url"}))
 		archiveUrl = str(archiveUrl[0]['content'].encode('utf-8')).replace('b','').replace('\'','')
-
 	return archiveUrl
 
 # 1. Get latest twitter mentions
@@ -76,24 +75,31 @@ def getMentions():
 	global tweetId
 	for mention in mentions:
 		if str(mention.created_at) not in mentionLog:
+			mentionLog.append(str(mention.created_at))
+			writeLog(mentionLog)
 			try:
+				# Check if just an url
 				convertUrl = mention.entities['urls'][0]['expanded_url']
 			except:
-				print("Not URL")
+				print("Not URL only")
+				# with open('test.js', 'w') as outfile:
+				# 	outfile.write(str(mention))
 				try:
+					# Check if reply to a tweet
 					checkIfReply = mention.in_reply_to_status_id
+					if(str(checkIfReply) == "None"):
+						print("Error in getting id #")
+						exit()
 					convertUrl = "https://twitter.com/statuses/"
 					convertUrl += str(checkIfReply)
 				except:
-					print("Not reply")
-					exit(1)
+					print("Not reply, not URL")
+					exit()
 			username = mention.user.screen_name
 			tweetId = mention.id
-			mentionLog.append(str(mention.created_at))
-			writeLog(mentionLog)
 		else:
 			print("No new Tweets!")
-			exit(1)
+			exit(2)
 
 	archiveUrl = archive(convertUrl)
 	tweet(archiveUrl)
